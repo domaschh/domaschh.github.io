@@ -2,65 +2,54 @@
 import BlogCard from '@/components/BlogCard.astro'
 import Link from '@/components/Link.astro'
 import PageHead from '@/components/PageHead.astro'
+import ProjectCard from '@/components/ProjectCard.astro'
 import { buttonVariants } from '@/components/ui/button'
 import { SITE } from '@/consts'
 import Layout from '@/layouts/Layout.astro'
-import { getRecentPosts } from '@/lib/data-utils'
+import { getAllProjects, getRecentPosts } from '@/lib/data-utils'
 
 const blog = await getRecentPosts(SITE.featuredPostCount)
+const projects = await getAllProjects()
 ---
 
 <Layout class="max-w-3xl">
   <PageHead slot="head" title="Home" />
   <section class="rounded-lg border">
     <div class="flex flex-col space-y-1.5 p-6">
-      <h3 class="text-3xl leading-none font-medium">er·u·dite</h3>
+      <h3 class="text-3xl leading-none font-medium">Ser·was</h3>
       <p class="text-muted-foreground text-sm">
-        /ˈer(y)əˌdīt/ &bull; <span class="font-medium">adjective</span>
+        /ˈsɛʁvɐs/ &bull; <span class="font-medium">greeting</span>
       </p>
     </div>
     <div class="p-6 pt-0">
-      <p class="text-muted-foreground mb-2 text-sm">
-        astro-erudite is an opinionated, unstyled static blogging template built
-        with <Link
-          href="https://astro.build"
-          class="text-foreground"
-          external
-          underline>Astro</Link
-        >, <Link
-          href="https://tailwindcss.com"
-          class="text-foreground"
-          external
-          underline>Tailwind</Link
-        >, and <Link
-          href="https://ui.shadcn.com"
-          class="text-foreground"
-          external
-          underline>shadcn/ui</Link
-        >. Extraordinarily loosely based on the <Link
-          href="https://astro-micro.vercel.app/"
-          class="text-foreground"
-          external
-          underline>Astro Micro</Link
-        > theme.
+      <p class="text-muted-foreground text-m mb-2">
+        I'm Thomas and I'm a software engineer from Austria(not Australia). I
+        like all things performance and have experience with systems
+        engineering, compilers and distributed systems.
       </p>
-      <p class="text-muted-foreground text-sm">
-        To use this template, check out the <Link
-          href="https://github.com/jktrn/astro-erudite"
-          class="text-foreground"
-          underline
-          external>GitHub</Link
-        > repository. To learn more about why this template exists, read this blog
-        post: <Link
-          href="/blog/the-state-of-static-blogs"
-          class="text-foreground"
-          underline>The State of Static Blogs in 2024</Link
-        >.
+      <p class="text-muted-foreground text-m mb-2">
+        Random ideas and things I've encountered during my timeline as a dev are
+        curated here (some of it at least). If you like what you or you just
+        want to say hi see feel free to reach out via. LinkedIn or Mail.
       </p>
     </div>
   </section>
-  <section class="flex flex-col gap-y-4">
-    <h2 class="text-2xl font-medium">Latest posts</h2>
+  <section>
+    <h2 class="text-2xl font-medium">Background</h2>
+    <div class="pt-1">
+      <p class="text-muted-foreground text-m mb-2">
+        Some of the things I'm proud to have worked on both professionally
+        and/or in my free time or university. If you're interested about the
+        things reach out. I have definetely learned a thing or two building
+        these projects. For a full CV check the about page.
+      </p>
+      <div class="grid gap-6">
+        {projects.map((project) => <ProjectCard project={project} />)}
+      </div>
+    </div>
+  </section>
+  <!-- <section class="flex flex-col gap-y-4">
+    <h2 class="text-2xl font-medium">Random ideas</h2>
     <ul class="flex flex-col gap-y-4">
       {
         blog.map((post) => (
@@ -75,11 +64,10 @@ const blog = await getRecentPosts(SITE.featuredPostCount)
         href="/blog"
         class={buttonVariants({ variant: 'ghost' }) + ' group'}
       >
-        See all posts <span
-          class="ml-1.5 transition-transform group-hover:translate-x-1"
+        All <span class="ml-1.5 transition-transform group-hover:translate-x-1"
           >&rarr;</span
         >
       </Link>
     </div>
-  </section>
+  </section> -->
 </Layout>

@@ -1,9 +1,8 @@
 ---
-name: 'Project B'
-description: 'This is an example project description! You should replace this with a description of your own project.'
-tags: ['Framework A', 'Library B', 'Tool C', 'Resource D']
-image: '../../../public/static/1200x630.png'
-link: 'https://example.com'
-startDate: '2024-02-01'
-endDate: '2024-03-01'
+name: 'Thread safe Arenas in Rust 🏟️'
+description: 'Exploration of arena/region based memory management in Rust. Fully exploiting the type system by leveraging invariant lifetimes as branded types to have zero overhead interior mutability. Builds on the ideas from GhostCell and pairs new Cell types with thread safe arena allocators.'
+tags: ['Allocators', 'Region based memory management', 'Rust', 'Type-systems']
+link: 'https://google.com'
+startDate: '2025-01-01'
+endDate: '2025-05-31'
 ---

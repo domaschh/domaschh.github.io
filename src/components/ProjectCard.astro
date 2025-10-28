@@ -3,7 +3,6 @@ import Link from '@/components/Link.astro'
 import { Badge } from '@/components/ui/badge'
 import { formatDate } from '@/lib/utils'
 import { Icon } from 'astro-icon/components'
-import { Image } from 'astro:assets'
 import type { CollectionEntry } from 'astro:content'
 
 interface Props {
@@ -21,19 +20,6 @@ const { project } = Astro.props
     class="flex flex-col gap-4 sm:flex-row"
     external
   >
-    {
-      project.data.image && (
-        <div class="w-full sm:max-w-3xs sm:shrink-0">
-          <Image
-            src={project.data.image}
-            alt={project.data.name}
-            width={1200}
-            height={630}
-            class="object-cover"
-          />
-        </div>
-      )
-    }
     <div class="grow">
       <h3 class="mb-1 text-lg font-medium">
         {project.data.name}

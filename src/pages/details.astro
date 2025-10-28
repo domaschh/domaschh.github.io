@@ -1,0 +1,45 @@
+---
+import Breadcrumbs from '@/components/Breadcrumbs.astro'
+import PageHead from '@/components/PageHead.astro'
+import Layout from '@/layouts/Layout.astro'
+import { getAllProjects } from '@/lib/data-utils'
+
+const projects = await getAllProjects()
+---
+
+<Layout class="max-w-3xl">
+  <PageHead slot="head" title="About" />
+  <Breadcrumbs items={[{ label: 'About', icon: 'lucide:info' }]} />
+
+  <section>
+    <div class="min-w-full">
+      <div class="prose mb-8">
+        <h2 class="text-2xl font-medium">Resume</h2>
+        <a href="/public/CV_ThomasMages.pdf" download>CV </a>
+        <h2 class="text-2xl font-medium">Appart from tech</h2>
+        I've been powerlifting for quite some time and proud to share my stats (raw):
+        <pre>
+                _                             _
+               | |                           | |
+             =H| |========mn=======nm========| |H=
+               |_|        ( \     / )        |_|
+                           \ )(")( /
+                           ( /\_/\ )
+                            \     /
+                             )=O=(
+                            /  _  \
+                           /__/ \__\
+                           | |   | |
+                           |_|   |_|
+                           (_)   (_)
+    ======================= Me ==========================
+        </pre>
+        <ul>
+          <li>Squat - 160kg/350lbs</li>
+          <li>Bench - 140kg/315lbs</li>
+          <li>Deadlift - 180kg/405lbs</li>
+        </ul>
+      </div>
+    </div>
+  </section>
+</Layout>
