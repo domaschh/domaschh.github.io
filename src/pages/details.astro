@@ -1,10 +1,10 @@
 ---
+import Link from '@/components/Link.astro'
+import { Icon } from 'astro-icon/components'
+
 import Breadcrumbs from '@/components/Breadcrumbs.astro'
 import PageHead from '@/components/PageHead.astro'
 import Layout from '@/layouts/Layout.astro'
-import { getAllProjects } from '@/lib/data-utils'
-
-const projects = await getAllProjects()
 ---
 
 <Layout class="max-w-3xl">
@@ -14,10 +14,29 @@ const projects = await getAllProjects()
   <section>
     <div class="min-w-full">
       <div class="prose mb-8">
-        <h2 class="text-2xl font-medium">Resume</h2>
-        <a href="/public/CV_ThomasMages.pdf" download>CV </a>
+        <div
+          class="hover:bg-muted/50 rounded-xl border p-4 transition-colors duration-300 ease-in-out"
+        >
+          <Link
+            href="/public/CV_ThomasMages.pdf"
+            download
+            class="flex flex-col gap-4 sm:flex-row"
+          >
+            <div class="flex w-full justify-baseline space-x-2 align-baseline">
+              <h3 class="mb-1 self-baseline text-lg font-medium">
+                Full Experience - CV
+              </h3>
+              <Icon name="lucide:download" class="size-5 self-center" />
+            </div>
+          </Link>
+        </div>
         <h2 class="text-2xl font-medium">Appart from tech</h2>
         I've been powerlifting for quite some time and proud to share my stats (raw):
+        <ul>
+          <li>Squat - 160kg/350lbs</li>
+          <li>Bench - 140kg/315lbs</li>
+          <li>Deadlift - 180kg/405lbs</li>
+        </ul>
         <pre>
                 _                             _
                | |                           | |
@@ -32,13 +51,8 @@ const projects = await getAllProjects()
                            | |   | |
                            |_|   |_|
                            (_)   (_)
-    ======================= Me ==========================
+=============================== Me ===============================
         </pre>
-        <ul>
-          <li>Squat - 160kg/350lbs</li>
-          <li>Bench - 140kg/315lbs</li>
-          <li>Deadlift - 180kg/405lbs</li>
-        </ul>
       </div>
     </div>
   </section>

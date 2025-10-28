@@ -30,6 +30,13 @@ export async function getAllProjects(): Promise<CollectionEntry<'projects'>[]> {
   })
 }
 
+export async function getNrProjects(
+  count: number,
+): Promise<CollectionEntry<'projects'>[]> {
+  const posts = await getAllProjects()
+  return posts.slice(0, count)
+}
+
 export async function getAllTags(): Promise<Map<string, number>> {
   const posts = await getAllPosts()
   return posts.reduce((acc, post) => {

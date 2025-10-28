@@ -1,0 +1,217 @@
+---
+title: 'Pairing Ghost cell with thread safe arenas'
+description: 'Cool ways to leverage type-systems to gain an edge in performance'
+date: 2024-06-01
+tags: ['v1.0.0']
+image: 'https://media.istockphoto.com/id/961353820/vector/roman-gladiators-fighting-in-coliseum-illustration-1880.jpg?s=612x612&w=0&k=20&c=r98303xkFz1CPOzUHqViTa5__5Rq-umZ3MQhmTGVCXY='
+authors: ['Domasch']
+---
+
+Rust’s ownership model can be a bithc. It gives us strong compile-time guarantees about memory and data races, but at a cost: sometimes it’s simply *too* strict. Sometimes *WE know* that what we're doing is okay, but convincing the compiler is ... eh, difficult.
+
+Cyclic data structures, self-references, shared mutation across threads — all of these are either painful or require unsafe tricks to express in safe Rust.  
+Over time, a few idioms have emerged to ease this pain: reference-counting, `RefCell`, and arena allocation.  
+But what happens if we take these ideas a bit further — and combine **GhostCell** with a **thread-safe arena**?
+
+That’s what this post explores: how to extend Rust’s ownership model *without breaking it*.
+
+---
+
+## The Ownership Wall
+
+Let’s start with the obvious: Rust’s *Aliasing XOR Mutability (AXM)* rule.  
+It says that at any given time, you can have either:
+- Many readers (`&T`), or  
+- Exactly one writer (`&mut T`).
+
+That’s fine for most data, but it kills patterns like doubly linked lists or graphs, where every node references others and you want local mutations.
+
+A simple attempt usually dies here:
+
+```rust
+struct Node {
+    val: i32,
+    next: Option<Box<Node>>,
+    prev: Option<Box<Node>>,
+}
+```
+
+This explodes once you try to make the two pointers talk to each other — each wants a mutable reference to something that already borrows mutably.
+The borrow checker wins again.
+RefCell and Rc: The Classic Escape Hatch
+
+# Escape hatch
+We’ve all seen this pattern:
+```rust
+use std::{cell::RefCell, rc::Rc};
+
+type Link<T> = Option<Rc<RefCell<Node<T>>>>;
+
+struct Node<T> {
+    val: T,
+    next: Link<T>,
+    prev: Link<T>,
+}
+```
+
+This works, but at a cost: Rc does runtime reference counting. RefCell does runtime borrow checking. And the combination can leak or panic when misused.
+You’ve traded compile-time safety for runtime checks.
+Fine for small apps — not great for low-level systems code.
+Arenas: Simplifying Lifetimes
+
+# Arenas to the rescue
+Arenas sidestep lifetime hell by giving all allocations a shared lifetime tied to the arena itself.
+You allocate once, and everything inside lives as long as the arena.
+This is extremely convenient for cyclic or graph data as we don't have to worry about complex lifetime relations. Everything just get's the same lifetime. 
+
+```rust
+use typed_arena::Arena;
+
+struct Node<'a> {
+    val: i32,
+    next: Option<&'a Node<'a>>,
+    prev: Option<&'a Node<'a>>,
+}
+
+fn main() {
+    let arena = Arena::new();
+    let a = arena.alloc(Node { val: 1, next: None, prev: None });
+    let b = arena.alloc(Node { val: 2, next: None, prev: Some(a) });
+    a.next = Some(b);
+}
+```
+No Rc, no RefCell, and no runtime cost.
+But **typed-arena** is not Sync, so it breaks down in multi-threaded contexts.
+
+# Porting Arenas to the shared world
+What we usually end up doing is just wrapping everything in a Mutex and call it a day. This however is kind of "meh" when you're dealing with a structure like a LikedList.
+
+Enter Ralf Jungs GhostCell idea.
+GhostCell: Compile-Time Interior Mutability
+GhostCell gives us interior mutability that’s statically safe in a sync conctext.
+
+It works by splitting data from permission -> exactly what Rust usually prevents. In the end it does the complete opposite. It *ties* data to permissions by baking in ownership into types.
+
+Instead of relying on runtime checks, it uses invariant lifetimes as (branded type magic) to ensure only one token can mutate a given cell at a time.
+
+```rust
+use ghost_cell::{GhostCell, GhostToken};
+
+GhostToken::new(|mut token| {
+    let cell = GhostCell::new(5);
+    *cell.borrow_mut(&mut token) += 1;
+    println!("{}", cell.borrow(&token));
+});
+```
+This feels like magic, but it’s pure type system logic — no locks, no panics, no atomics.
+You just can’t create two mutable tokens with the same brand.
+The compiler won’t let you.
+Thread Safety and the Missing Piece
+
+GhostCell itself is thread-safe — but that doesn’t help if your allocator isn’t.
+Most arena allocators (typed-arena, bumpalo) are !Sync because their internal bump pointers aren’t protected.
+To safely allocate from multiple threads, you need a synchronized variant.
+
+That’s where bumpalo-herd comes in.
+bumpalo-herd: Thread-Safe Arena Allocation
+
+bumpalo-herd wraps bumpalo in a Herd abstraction.
+Each thread gets its own local allocator (```Member<\'_>```), and all members feed back into the same memory herd when dropped.
+It’s like having one big arena distributed across threads — efficient and Sync.
+
+Combining this with GhostCell lets us build data structures that are:
+
+    Lock-free at the node level,
+
+    Thread-safe through compile-time branding,
+
+    Allocation-efficient through arena reuse.
+
+Let’s wire this up in a small concurrent doubly linked list.
+Example: A Concurrent DLL using GhostCell + bumpalo-herd
+
+This is a simplified version of the prototype from my thesis:
+
+```rust
+use bumpalo_herd::{Herd, Member};
+use ghost_cell::{GhostCell, GhostToken};
+
+struct Node<'arena, 'id> {
+    val: i32,
+    next: Option<&'arena GhostCell<'id, Node<'arena, 'id>>>,
+    prev: Option<&'arena GhostCell<'id, Node<'arena, 'id>>>,
+}
+
+impl<'arena, 'id> Node<'arena, 'id> {
+    fn new(val: i32, member: &Member<'arena>) -> &'arena GhostCell<'id, Self> {
+        GhostCell::from_mut(member.alloc(Self {
+            val,
+            next: None,
+            prev: None,
+        }))
+    }
+
+    fn link(
+        a: &'arena GhostCell<'id, Self>,
+        b: &'arena GhostCell<'id, Self>,
+        token: &mut GhostToken<'id>,
+    ) {
+        a.borrow_mut(token).next = Some(b);
+        b.borrow_mut(token).prev = Some(a);
+    }
+}
+```
+
+Now let’s use it across threads:
+```rust
+use rayon::prelude::*;
+
+fn main() {
+    let herd = Herd::new();
+
+    GhostToken::new(|mut token| {
+        let list: Vec<_> = (0..10)
+            .map(|i| Node::new(i, &herd.member()))
+            .collect();
+
+        for w in list.windows(2) {
+            Node::link(w[0], w[1], &mut token);
+        }
+
+        rayon::join(
+            || {
+                // reader thread
+                let token = &token;
+                for n in &list {
+                    let v = n.borrow(token).val;
+                    print!("{v} ");
+                }
+            },
+            || {
+                // writer thread
+                let token = &mut token;
+                for n in &list {
+                    n.borrow_mut(token).val += 100;
+                }
+            },
+        );
+    });
+}
+```
+No Arc, no Mutex, and still 100% safe.
+Every thread works on the same arena, synchronized through the GhostToken rules.
+The data structure behaves like an ordinary linked list — except the compiler enforces all the safety properties you’d expect from Rust.
+Why This Works
+GhostCell ensures aliasing and mutability are separated by branded tokens.
+No two mutable borrows can exist for the same lifetime.
+bumpalo-herd guarantees thread-local allocators can safely coexist and feed back into a shared memory pool. Together, they form a zero-cost pattern for concurrent mutation — the type system does the locking.
+No runtime bookkeeping, no synchronization primitives, and no lost safety.
+Trade-offs and Caveats
+
+It’s not all roses:
+
+You can’t create new nodes after spawning threads unless your arena supports concurrent allocation (bumpalo-herd does, but with some friction).
+
+Deallocation still happens in bulk when the herd drops — not individually.
+
+The approach works best for static topologies where you mutate data, not constantly resize structures. Still, for things like graphs, ECS-style systems, or transient structures in compilers, it’s a perfect fit. GhostCell feels like a glimpse into what “post-ownership Rust” might look like — a type system strong enough to let us express shared, mutable data structures safely without giving up performance. Paired with a thread-safe arena like bumpalo-herd, it turns out we can build surprisingly flexible and concurrent structures that remain entirely safe, lock-free, and idiomatic.

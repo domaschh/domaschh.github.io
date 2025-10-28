@@ -39,7 +39,12 @@ const projects = defineCollection({
       name: z.string(),
       description: z.string(),
       tags: z.array(z.string()),
-      link: z.string().url(),
+      link: z
+        .string()
+        .refine((val) => val.startsWith('/') || /^https?:\/\//.test(val), {
+          message:
+            'Link must be an absolute URL or start with / for internal links',
+        }),
       startDate: z.coerce.date().optional(),
       endDate: z.coerce.date().optional(),
     }),
