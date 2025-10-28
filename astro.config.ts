@@ -20,7 +20,6 @@ import tailwindcss from '@tailwindcss/vite'
 
 export default defineConfig({
   site: 'https://domaschh.github.io',
-  base: '/portfolio',
   integrations: [
     expressiveCode({
       themes: ['github-light', 'github-dark'],
