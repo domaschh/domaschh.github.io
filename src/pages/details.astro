@@ -1,7 +1,4 @@
 ---
-import Link from '@/components/Link.astro'
-import { Icon } from 'astro-icon/components'
-
 import Breadcrumbs from '@/components/Breadcrumbs.astro'
 import PageHead from '@/components/PageHead.astro'
 import Layout from '@/layouts/Layout.astro'
@@ -14,34 +11,29 @@ import Layout from '@/layouts/Layout.astro'
   <section>
     <div class="min-w-full">
       <div class="prose mb-8">
-        <div
-          class="hover:bg-muted/50 rounded-xl border p-4 transition-colors duration-300 ease-in-out"
+        <a
+          href="/public/CV_ThomasMages.pdf"
+          download
+          class="flex flex-col gap-4 sm:flex-row"
         >
-          <Link
-            href="/public/CV_ThomasMages.pdf"
-            download
-            class="flex flex-col gap-4 sm:flex-row"
-          >
-            <div class="flex w-full justify-baseline space-x-2 align-baseline">
-              <h3 class="mb-1 self-baseline text-lg font-medium">
-                Full Experience - CV
-              </h3>
-              <Icon name="lucide:download" class="size-5 self-center" />
-            </div>
-          </Link>
-        </div>
-        <h2 class="text-2xl font-medium">Appart from tech</h2>
-        I've been powerlifting for quite some time and proud to share my stats (raw):
-        <ul>
-          <li>Squat - 160kg/350lbs</li>
-          <li>Bench - 140kg/315lbs</li>
-          <li>Deadlift - 180kg/405lbs</li>
-        </ul>
-        <pre>
-                _                             _
-               | |                           | |
-             =H| |========mn=======nm========| |H=
-               |_|        ( \     / )        |_|
+          <h3 class="mb-1 self-baseline text-lg font-medium">
+            Full Experience - CV
+          </h3>
+        </a>
+        <h2 class="text-center text-2xl font-medium">Appart from tech</h2>
+        <p class="text-center">
+          I've been powerlifting for quite some time and proud to share my stats
+          (raw):
+        </p>
+        <p class="text-center">
+          Squat - 160kg/350lbs Bench - 140kg/315lbs Deadlift - 180kg/405lbs
+        </p>
+        <pre
+          style="margin-left: 80px;">
+                    _                     _
+                   | |                   | |
+                 =H| |====mn=======nm====| |H=
+                   |_|    ( \     / )    |_|
                            \ )(")( /
                            ( /\_/\ )
                             \     /
@@ -51,7 +43,6 @@ import Layout from '@/layouts/Layout.astro'
                            | |   | |
                            |_|   |_|
                            (_)   (_)
-=============================== Me ===============================
         </pre>
       </div>
     </div>
